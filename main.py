@@ -127,6 +127,8 @@ class WalletTransfer(BaseModel):
 def get_db_connection():
     database_url = os.getenv("DATABASE_URL")
     if database_url:
+        if database_url.startswith("postgres://"):
+            database_url = database_url.replace("postgres://", "postgresql://", 1)
         return psycopg2.connect(database_url)
     return psycopg2.connect(
         host=os.getenv("DB_HOST", "db"),
@@ -532,46 +534,73 @@ def get_owned_subscription(cursor, sub_id: int, user_id: int):
 
 @app.on_event("startup")
 def startup_event():
+    print("データベースの初期化を開始します...")
     conn = get_db_connection()
     cursor = conn.cursor()
-    default_uid = ensure_default_user_id(cursor)
+    try:
+        default_uid = ensure_default_user_id(cursor)
 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS subscription_price_history (
-            id SERIAL PRIMARY KEY,
-            subscription_id INTEGER NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
-            price INTEGER NOT NULL,
-            effective_from DATE NOT NULL
-        );
-    """)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS subscription_pauses (
-            id SERIAL PRIMARY KEY,
-            subscription_id INTEGER NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
-            pause_from DATE NOT NULL,
-            pause_until DATE
-        );
-    """)
-    ensure_subscriptions_columns(cursor, default_uid)
-    cursor.execute("""
-        INSERT INTO subscription_price_history (subscription_id, price, effective_from)
-        SELECT s.id, s.price, COALESCE(s.started_from, CURRENT_DATE)
-        FROM subscriptions s
-        WHERE NOT EXISTS (
-            SELECT 1 FROM subscription_price_history h WHERE h.subscription_id = s.id
-        );
-    """)
-    ensure_pocket_table(cursor, default_uid)
-    ensure_subscription_bill_logs_table(cursor)
+        # 1. 親テーブル subscriptions を先に作成（外部キー参照のため）
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS subscriptions (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL DEFAULT 1,
+                name VARCHAR(100) NOT NULL,
+                price INTEGER NOT NULL,
+                billing_day INTEGER NOT NULL,
+                started_from DATE,
+                categories TEXT[] NOT NULL,
+                payment_method VARCHAR(50) NOT NULL
+            );
+        """)
 
-    cursor.execute("SELECT id FROM users;")
-    for urow in cursor.fetchall():
-        uid = int(urow[0])
-        ensure_wallet_accounts_table(cursor, uid)
+        # 2. subscriptions を参照する子テーブルを作成
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS subscription_price_history (
+                id SERIAL PRIMARY KEY,
+                subscription_id INTEGER NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
+                price INTEGER NOT NULL,
+                effective_from DATE NOT NULL
+            );
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS subscription_pauses (
+                id SERIAL PRIMARY KEY,
+                subscription_id INTEGER NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
+                pause_from DATE NOT NULL,
+                pause_until DATE
+            );
+        """)
 
-    conn.commit()
-    cursor.close()
-    conn.close()
+        # 3. カラム追加とデータ移行
+        ensure_subscriptions_columns(cursor, default_uid)
+        cursor.execute("""
+            INSERT INTO subscription_price_history (subscription_id, price, effective_from)
+            SELECT s.id, s.price, COALESCE(s.started_from, CURRENT_DATE)
+            FROM subscriptions s
+            WHERE NOT EXISTS (
+                SELECT 1 FROM subscription_price_history h WHERE h.subscription_id = s.id
+            );
+        """)
+        ensure_pocket_table(cursor, default_uid)
+        ensure_subscription_bill_logs_table(cursor)
+
+        cursor.execute("SELECT id FROM users;")
+        for urow in cursor.fetchall():
+            uid = int(urow[0])
+            ensure_wallet_accounts_table(cursor, uid)
+
+        conn.commit()
+        print("データベースの初期化が正常に完了しました。")
+    except Exception as e:
+        conn.rollback()
+        import traceback
+        print("データベース初期化中にエラーが発生しました:")
+        traceback.print_exc()
+        raise e
+    finally:
+        cursor.close()
+        conn.close()
 
 
 @app.post("/auth/register")

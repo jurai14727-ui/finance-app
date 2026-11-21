@@ -1,0 +1,2233 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>サブスク・固定費＆おこづかい帳管理</title>
+  <style>
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", sans-serif;
+      max-width: 1120px;
+      margin: 32px auto;
+      padding: 0 16px;
+      background: #f7f8fa;
+      color: #222;
+      line-height: 1.6;
+    }
+    h1 { margin-bottom: 16px; font-size: 1.6rem; }
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 18px 20px;
+      margin-bottom: 18px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .btn-group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    button {
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 1px solid #d0d7de;
+      background: #fff;
+      color: #222;
+      cursor: pointer;
+      font-size: 0.92rem;
+    }
+    button:hover { background: #f0f3f6; }
+    button.jump-btn {
+      background: #ecfdf5;
+      border-color: #6ee7b7;
+      color: #065f46;
+      font-weight: 700;
+    }
+    button.primary { background: #2563eb; border-color: #2563eb; color: #fff; }
+    button.secondary-btn { background: #0f766e; border-color: #0f766e; color: #fff; }
+    button.warn-btn { background: #b45309; border-color: #b45309; color: #fff; }
+    button.split-btn {
+      background: #eff6ff;
+      border-color: #93c5fd;
+      color: #1d4ed8;
+      font-weight: 700;
+    }
+    button.edit-btn {
+      background: #f0fdf4;
+      border-color: #86efac;
+      color: #166534;
+      font-weight: 700;
+    }
+    button.active { background: #111827; border-color: #111827; color: #fff; }
+    button.danger {
+      border-color: #ef4444;
+      color: #dc2626;
+      padding: 4px 10px;
+      font-size: 0.82rem;
+    }
+    button.small-btn { padding: 3px 8px; font-size: 0.76rem; }
+    .current-ym { font-weight: 700; font-size: 1.05rem; min-width: 64px; text-align: center; }
+    .annual-year-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+    }
+    .year-select { width: auto; min-width: 105px; padding: 6px 10px; font-weight: 700; }
+    .overall-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+      margin-bottom: 12px;
+      align-items: start;
+    }
+    .stat-card {
+      border-radius: 8px;
+      padding: 14px 16px;
+      border: 1px solid #e5e7eb;
+      background: #f8fafc;
+    }
+    .stat-card.income { background: #f0fdf4; border-color: #bbf7d0; }
+    .stat-card.expense { background: #fef2f2; border-color: #fecaca; }
+    .stat-card.balance { background: #eff6ff; border-color: #93c5fd; }
+    .stat-title { font-size: 0.84rem; font-weight: 600; color: #4b5563; margin-bottom: 4px; }
+    .stat-value { font-size: 1.45rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .stat-sub { font-size: 0.8rem; color: #6b7280; margin-top: 4px; }
+    .wallet-list {
+      list-style: none;
+      margin: 10px 0 0 0;
+      padding: 10px 0 0 0;
+      border-top: 1px solid #bfdbfe;
+    }
+    .wallet-list-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 0;
+      border-bottom: 1px dashed #dbeafe;
+      font-size: 0.88rem;
+    }
+    .wallet-list-row:last-child { border-bottom: none; }
+    .wallet-row-name { font-weight: 700; color: #1e293b; }
+    .wallet-row-right { display: flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+    .wallet-row-amount { font-weight: 800; color: #0f172a; }
+    .wallet-ops-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+    }
+    .wallet-ops-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .wallet-op-panel {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .wallet-op-panel h4 { margin: 0 0 8px 0; font-size: 0.92rem; color: #1e293b; }
+    .schedule-split {
+      display: grid;
+      grid-template-columns: 1fr 1.35fr;
+      gap: 16px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .schedule-split { grid-template-columns: 1fr; }
+    }
+    .calendar-box {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 10px;
+      background: #fcfcfd;
+    }
+    .calendar-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 4px;
+    }
+    .cal-dow { text-align: center; font-size: 0.78rem; font-weight: 700; color: #6b7280; padding: 4px 0; }
+    .cal-dow.sun { color: #dc2626; }
+    .cal-dow.sat { color: #2563eb; }
+    .cal-cell {
+      min-height: 64px;
+      min-width: 0;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 4px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-sizing: border-box;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .cal-cell.selected-day { border: 2px solid #2563eb; background: #eff6ff; }
+    .cal-cell.empty { background: #f8fafc; border-color: #f1f5f9; cursor: default; }
+    .cal-cell.has-activity { border-color: #cbd5e1; background: #fafafa; }
+    .cal-cell.has-activity.selected-day { background: #eff6ff; }
+    .cal-day-num { font-size: 0.75rem; font-weight: 700; color: #374151; line-height: 1.2; }
+    .cal-day-num.sun { color: #dc2626; }
+    .cal-day-num.sat { color: #2563eb; }
+    .cal-lines { display: flex; flex-direction: column; gap: 1px; text-align: right; line-height: 1.25; margin-top: 2px; }
+    .cal-expense-line, .cal-net-line {
+      font-size: 0.68rem;
+      font-weight: 700;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cal-expense-line { color: #b91c1c; }
+    .cal-net-line { font-weight: 800; }
+    .cal-net-pos { color: #15803d; }
+    .cal-net-neg { color: #dc2626; }
+    .cal-net-zero { color: #4b5563; }
+    .day-detail-panel {
+      margin-top: 10px;
+      border: 1px solid #dbeafe;
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .day-detail-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .day-detail-list { list-style: none; margin: 0; padding: 0; font-size: 0.84rem; }
+    .day-detail-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 0;
+      border-bottom: 1px dashed #e5e7eb;
+    }
+    .day-detail-item:last-child { border-bottom: none; }
+    .summary-box {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .summary-amount { font-size: 1.35rem; font-weight: 700; color: #1d4ed8; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+    label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; }
+    input, select {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 0.92rem;
+      background: #fff;
+    }
+    select[multiple] { height: 86px; }
+    .passbook-wrap { border: 1px solid #cbd5e1; border-radius: 8px; overflow-x: auto; background: #fff; }
+    .passbook-table { width: 100%; border-collapse: collapse; margin-top: 0; }
+    .passbook-table th {
+      background: #f1f5f9;
+      color: #1e293b;
+      font-weight: 700;
+      font-size: 0.84rem;
+      border-bottom: 2px solid #cbd5e1;
+      white-space: nowrap;
+    }
+    .passbook-table td {
+      padding: 9px 8px;
+      border-bottom: 1px dashed #e2e8f0;
+      font-size: 0.88rem;
+      vertical-align: middle;
+    }
+    .passbook-table tr:nth-child(even) td { background: #fcfdfd; }
+    .passbook-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .action-panel-box {
+      margin-top: 12px;
+      border: 1px solid #93c5fd;
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #e5e7eb; font-size: 0.9rem; }
+    th { background: #f9fafb; font-weight: 600; }
+    .badge {
+      display: inline-block;
+      background: #f1f5f9;
+      border-radius: 4px;
+      padding: 2px 7px;
+      font-size: 0.78rem;
+      margin-right: 4px;
+    }
+    .auto-badge {
+      display: inline-block;
+      background: #ecfeff;
+      color: #0e7490;
+      border: 1px solid #a5f3fc;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      margin-left: 6px;
+    }
+    .method-badge {
+      display: inline-block;
+      background: #eef2ff;
+      color: #3730a3;
+      border-radius: 4px;
+      padding: 2px 7px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .paused-badge {
+      display: inline-block;
+      background: #fef3c7;
+      color: #92400e;
+      border-radius: 4px;
+      padding: 2px 7px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .months-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 12px; }
+    .month-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; background: #fafafa; }
+    .month-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-weight: 700;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .month-list { list-style: none; padding: 0; margin: 0; font-size: 0.85rem; }
+    .month-list li { display: flex; justify-content: space-between; padding: 3px 0; }
+    .paused-box {
+      margin-top: 14px;
+      padding: 10px 14px;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      font-size: 0.88rem;
+    }
+    .muted { color: #6b7280; font-size: 0.88rem; }
+    .notice-text { color: #0f766e; font-size: 0.9rem; margin-top: 8px; }
+    .error-text { color: #dc2626; font-size: 0.9rem; margin-top: 8px; }
+    .section-top-link { font-size: 0.82rem; color: #2563eb; text-decoration: none; font-weight: 600; }
+    details.sub-menu-drawer {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+    summary.sub-menu-summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      background: #f8fafc;
+      user-select: none;
+    }
+    summary.sub-menu-summary::-webkit-details-marker { display: none; }
+    .drawer-body { padding: 18px 20px; }
+    .sub-group-panel {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 14px 16px;
+      background: #fcfcfd;
+      margin-top: 14px;
+    }
+    .sub-group-panel h3 { margin: 0 0 8px 0; font-size: 1rem; }
+    .sub-split-2col { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin-top: 12px; }
+    .mini-box { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; background: #fff; }
+    .mini-box h4 { margin: 0 0 6px 0; font-size: 0.95rem; }
+    .auth-box { max-width: 460px; margin: 24px auto; }
+  </style>
+</head>
+<body>
+  <div class="toolbar" style="margin-bottom: 12px;">
+    <h1 id="pageTop" style="margin: 0;">サブスク・固定費＆おこづかい帳管理</h1>
+    <div id="authSessionBar" class="btn-group" style="display: none;">
+      <span class="muted" id="loggedInUsername" style="font-weight: 700; color: #1e293b;"></span>
+      <button type="button" onclick="handleLogout()">ログアウト</button>
+    </div>
+  </div>
+
+  <div id="authCard" class="card auth-box">
+    <h2 style="margin: 0 0 8px 0; font-size: 1.2rem;">ログイン</h2>
+    <p class="muted" style="margin: 0 0 14px 0;">
+      ユーザー名とパスワードを入力してください。アカウントがない場合は「新規登録」から作成できます。
+    </p>
+    <div class="btn-group" style="margin-bottom: 14px;">
+      <button id="authModeLogin" type="button" class="active" onclick="setAuthMode('login')">ログイン</button>
+      <button id="authModeRegister" type="button" onclick="setAuthMode('register')">新規登録</button>
+    </div>
+    <form id="authForm" onsubmit="handleAuthSubmit(event)">
+      <div style="margin-bottom: 10px;">
+        <label for="authUsername">ユーザー名（2文字以上）</label>
+        <input id="authUsername" type="text" required minlength="2" autocomplete="username" />
+      </div>
+      <div style="margin-bottom: 14px;">
+        <label for="authPassword">パスワード（4文字以上）</label>
+        <input id="authPassword" type="password" required minlength="4" autocomplete="current-password" />
+      </div>
+      <button id="authSubmitBtn" type="submit" class="primary" style="width: 100%;">ログインする</button>
+    </form>
+    <div id="authError" class="error-text"></div>
+  </div>
+
+  <div id="mainApp" style="display: none;">
+    <div class="card">
+      <div class="toolbar">
+        <div class="btn-group">
+          <button id="tabMonthly" type="button" class="active" onclick="switchView('monthly')">月別スケジュール</button>
+          <button id="tabAnnual" type="button" onclick="switchView('annual')">年間予定（1〜12月）</button>
+          <button type="button" class="jump-btn" onclick="jumpToPocketLedger()">おこづかい帳へ ▼</button>
+        </div>
+        <div class="btn-group">
+          <button type="button" onclick="changeMonth(-1)">◀ 前月</button>
+          <select id="monthlyYearSelect" class="year-select" onchange="selectYear(this.value)"></select>
+          <span id="currentYearMonth" class="current-ym"></span>
+          <button type="button" onclick="changeMonth(1)">翌月 ▶</button>
+          <button type="button" onclick="jumpToToday()">今月へ</button>
+        </div>
+      </div>
+
+      <div id="noticeMessage" class="notice-text"></div>
+      <div id="errorMessage" class="error-text"></div>
+
+      <div class="overall-grid">
+        <div class="stat-card income">
+          <div class="stat-title" id="overallIncomeTitle">今月の収入</div>
+          <div class="stat-value" id="overallIncomeValue" style="color: #15803d;">¥0</div>
+          <div class="stat-sub">選択した月の収入合計</div>
+        </div>
+        <div class="stat-card expense">
+          <div class="stat-title" id="overallExpenseTitle">今月使った合計金額</div>
+          <div class="stat-value" id="overallExpenseValue" style="color: #dc2626;">¥0</div>
+          <div class="stat-sub" id="overallExpenseBreakdown">サブスク ¥0 ＋ おこづかい支出 ¥0</div>
+        </div>
+        <div class="stat-card balance">
+          <div class="stat-title">今の手元残高（全口座合計・通帳全期間集計）</div>
+          <div class="stat-value" id="currentWalletBalanceValue" style="color: #1d4ed8;">¥0</div>
+          <div class="stat-sub">通帳の全期間集計・残高修正の差額を反映</div>
+          <ul id="walletBreakdownList" class="wallet-list"></ul>
+        </div>
+      </div>
+
+      <details id="walletOpsDrawer" class="wallet-ops-box">
+        <summary style="cursor: pointer; font-weight: 700; font-size: 0.92rem; color: #1e293b;">
+          口座・決済手段の残高修正 / 口座間の移動（振替） / 項目の追加・名前変更
+        </summary>
+        <div class="wallet-ops-grid">
+          <div class="wallet-op-panel">
+            <h4>① 残高を直接セット（差額を雑所得・雑損益に自動記録）</h4>
+            <form onsubmit="handleWalletAdjust(event)">
+              <div style="margin-bottom: 8px;">
+                <label for="walletTargetSelect">対象口座・手段</label>
+                <select id="walletTargetSelect"></select>
+              </div>
+              <div style="margin-bottom: 8px;">
+                <label for="walletTargetInput">新しい残高（円）</label>
+                <input id="walletTargetInput" type="number" required placeholder="例: 25000" />
+              </div>
+              <div style="margin-bottom: 8px;">
+                <label for="walletNoteInput">調整メモ・摘要（任意）</label>
+                <input id="walletNoteInput" type="text" placeholder="例: 財布残高確認" />
+              </div>
+              <button type="submit" class="primary">残高を更新</button>
+            </form>
+          </div>
+
+          <div class="wallet-op-panel">
+            <h4>② 口座間の移動（振替・チャージ）</h4>
+            <form onsubmit="handleWalletTransfer(event)">
+              <div class="form-grid" style="margin-bottom: 8px;">
+                <div>
+                  <label for="transferFromSelect">移動元（減る方）</label>
+                  <select id="transferFromSelect"></select>
+                </div>
+                <div>
+                  <label for="transferToSelect">移動先（増える方）</label>
+                  <select id="transferToSelect"></select>
+                </div>
+              </div>
+              <div style="margin-bottom: 8px;">
+                <label for="transferAmountInput">金額（円）</label>
+                <input id="transferAmountInput" type="number" min="1" required placeholder="例: 5000" />
+              </div>
+              <div style="margin-bottom: 8px;">
+                <label for="transferMemoInput">メモ（任意）</label>
+                <input id="transferMemoInput" type="text" placeholder="例: ATM引き出し / PayPayチャージ" />
+              </div>
+              <button type="submit" class="secondary-btn">振替を実行</button>
+            </form>
+          </div>
+
+          <div class="wallet-op-panel">
+            <h4>③ 項目の追加・名前変更</h4>
+            <form onsubmit="handleAddWallet(event)" style="margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px dashed #e2e8f0;">
+              <label for="newWalletName">新しい項目名を追加</label>
+              <div class="btn-group" style="margin-bottom: 6px;">
+                <input id="newWalletName" type="text" required placeholder="例: ゆうちょ、楽天ペイ、Suica" style="flex: 1;" />
+                <input id="newWalletInitial" type="number" value="0" style="width: 110px;" />
+              </div>
+              <button type="submit" class="secondary-btn small-btn">＋ 項目を追加</button>
+            </form>
+            <form onsubmit="handleRenameWallet(event)">
+              <label for="renameWalletSelect">名前を変更する項目</label>
+              <div class="btn-group" style="margin-bottom: 6px;">
+                <select id="renameWalletSelect" style="flex: 1;"></select>
+                <input id="renameWalletInput" type="text" required placeholder="新しい名前" style="flex: 1;" />
+              </div>
+              <button type="submit" class="small-btn">名前を変更</button>
+            </form>
+          </div>
+        </div>
+      </details>
+
+      <div id="monthlyView">
+        <div class="schedule-split">
+          <div>
+            <div class="summary-box">
+              <div>
+                <div class="muted" id="monthlyLabel"></div>
+                <div id="monthlyCount" class="muted"></div>
+              </div>
+              <div class="summary-amount" id="monthlyTotal">¥0</div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>引き落とし日</th>
+                  <th>名称</th>
+                  <th>金額</th>
+                  <th>カテゴリー</th>
+                  <th>支払方法</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="monthlyTableBody"></tbody>
+            </table>
+            <div id="monthlyPausedBox" class="paused-box" style="display: none;">
+              <strong>この月に停止中のサブスク（請求対象外）</strong>
+              <ul id="monthlyPausedList" style="margin: 6px 0 0 18px; padding: 0;"></ul>
+            </div>
+          </div>
+
+          <div class="calendar-box">
+            <div class="calendar-header-row">
+              <strong id="calendarTitle" style="font-size: 0.98rem;">日別カレンダー</strong>
+              <span class="muted" style="font-size: 0.75rem;">
+                <span style="color:#b91c1c;font-weight:700;">支出</span> /
+                <span style="color:#15803d;font-weight:700;">収支+</span>・<span style="color:#dc2626;font-weight:700;">収支-</span>
+              </span>
+            </div>
+            <div id="calendarGrid" class="calendar-grid"></div>
+            <div id="calendarDayDetail" class="day-detail-panel"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="annualView" style="display: none;">
+        <div class="annual-year-bar">
+          <div class="btn-group">
+            <button type="button" onclick="changeYear(-1)">◀ 前年へ</button>
+            <select id="annualYearSelect" class="year-select" onchange="selectYear(this.value)"></select>
+            <button type="button" onclick="changeYear(1)">翌年へ ▶</button>
+            <button type="button" onclick="jumpToToday()">今年へ</button>
+          </div>
+          <span class="muted" style="font-size: 0.82rem;">過去の年（2020年〜）まで確認できます</span>
+        </div>
+        <div class="schedule-split">
+          <div>
+            <div class="summary-box">
+              <div>
+                <div class="muted" id="annualLabel"></div>
+                <div class="muted">1月〜12月の合計見込み（停止期間は除外）</div>
+              </div>
+              <div class="summary-amount" id="annualTotal">¥0</div>
+            </div>
+            <div id="annualMonthsGrid" class="months-grid"></div>
+          </div>
+          <div class="calendar-box">
+            <div class="calendar-header-row">
+              <strong id="annualCalendarTitle" style="font-size: 0.98rem;">日別カレンダー</strong>
+              <span class="muted" style="font-size: 0.75rem;">
+                <span style="color:#b91c1c;font-weight:700;">支出</span> /
+                <span style="color:#15803d;font-weight:700;">収支+</span>・<span style="color:#dc2626;font-weight:700;">収支-</span>
+              </span>
+            </div>
+            <div id="annualCalendarGrid" class="calendar-grid"></div>
+            <div id="annualCalendarDayDetail" class="day-detail-panel"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="pocketLedgerCard">
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <h2 style="margin: 0; font-size: 1.15rem;">おこづかい帳（月別通帳表示）</h2>
+        <a href="#pageTop" class="section-top-link">▲ 上部へ戻る</a>
+      </div>
+      <div class="summary-box" style="background: #f0fdf4; border-color: #bbf7d0; margin-top: 10px;">
+        <div>
+          <div class="muted" id="pocketMonthLabel"></div>
+          <div id="pocketBreakdown" class="muted">収入: ¥0 / 支出: ¥0</div>
+        </div>
+        <div class="summary-amount" id="pocketBalance" style="color: #15803d;">月間差引 ¥0</div>
+      </div>
+
+      <form id="pocketForm" onsubmit="handlePocketCreate(event)" style="margin-bottom: 16px;">
+        <div class="form-grid">
+          <div>
+            <label for="pocketType">区分</label>
+            <select id="pocketType" required>
+              <option value="expense">支出（使った）</option>
+              <option value="income">収入（もらった）</option>
+            </select>
+          </div>
+          <div>
+            <label for="pocketAmount">金額（円）</label>
+            <input id="pocketAmount" type="number" min="0" required placeholder="例: 850" />
+          </div>
+          <div>
+            <label for="pocketDate">日付</label>
+            <input id="pocketDate" type="date" required />
+          </div>
+          <div>
+            <label for="pocketMethod">手段</label>
+            <select id="pocketMethod" required></select>
+          </div>
+          <div>
+            <label for="pocketTitle">内容・摘要</label>
+            <input id="pocketTitle" type="text" required placeholder="例: ランチ" />
+          </div>
+          <div>
+            <label for="pocketCategory">分類</label>
+            <select id="pocketCategory" required>
+              <option value="食費">食費</option>
+              <option value="交通">交通</option>
+              <option value="光熱費・水道料金">光熱費・水道料金</option>
+              <option value="推し活">推し活</option>
+              <option value="エンタメ">エンタメ</option>
+              <option value="ゲーム・課金">ゲーム・課金</option>
+              <option value="買い物・日用品">買い物・日用品</option>
+              <option value="交際費">交際費</option>
+              <option value="収入・おこづかい">収入・おこづかい</option>
+              <option value="雑所得">雑所得</option>
+              <option value="雑損益">雑損益</option>
+              <option value="その他" selected>その他</option>
+            </select>
+          </div>
+          <div>
+            <label for="pocketMemo">メモ（任意）</label>
+            <input id="pocketMemo" type="text" />
+          </div>
+        </div>
+        <div style="margin-top: 12px;">
+          <button type="submit" class="secondary-btn">おこづかい帳に記録する</button>
+        </div>
+      </form>
+
+      <div id="editEntryPanel" class="action-panel-box" style="display: none; margin-bottom: 14px; border-color: #0f766e; background: #f0fdf4;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+          <strong style="color: #166534;">通帳明細の編集（削除せずにそのまま変更）</strong>
+          <button type="button" class="small-btn" onclick="closeEditPanel()">閉じる</button>
+        </div>
+        <form id="editEntryForm" onsubmit="handlePocketEditSubmit(event)">
+          <input type="hidden" id="editEntryId" />
+          <div class="form-grid">
+            <div>
+              <label for="editEntryType">区分</label>
+              <select id="editEntryType" required>
+                <option value="expense">支出（使った）</option>
+                <option value="income">収入（もらった）</option>
+              </select>
+            </div>
+            <div>
+              <label for="editEntryAmount">金額（円）</label>
+              <input id="editEntryAmount" type="number" min="0" required />
+            </div>
+            <div>
+              <label for="editEntryDate">日付</label>
+              <input id="editEntryDate" type="date" required />
+            </div>
+            <div>
+              <label for="editEntryMethod">手段</label>
+              <select id="editEntryMethod" required></select>
+            </div>
+            <div>
+              <label for="editEntryTitle">内容・摘要</label>
+              <input id="editEntryTitle" type="text" required />
+            </div>
+            <div>
+              <label for="editEntryCategory">分類</label>
+              <select id="editEntryCategory" required>
+                <option value="食費">食費</option>
+                <option value="交通">交通</option>
+                <option value="光熱費・水道料金">光熱費・水道料金</option>
+                <option value="推し活">推し活</option>
+                <option value="エンタメ">エンタメ</option>
+                <option value="ゲーム・課金">ゲーム・課金</option>
+                <option value="買い物・日用品">買い物・日用品</option>
+                <option value="交際費">交際費</option>
+                <option value="収入・おこづかい">収入・おこづかい</option>
+                <option value="雑所得">雑所得</option>
+                <option value="雑損益">雑損益</option>
+                <option value="その他">その他</option>
+              </select>
+            </div>
+            <div>
+              <label for="editEntryMemo">メモ（任意）</label>
+              <input id="editEntryMemo" type="text" />
+            </div>
+          </div>
+          <div class="btn-group" style="margin-top: 10px;">
+            <button type="submit" class="secondary-btn">変更を保存する</button>
+            <button type="button" onclick="closeEditPanel()">キャンセル</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="splitEntryPanel" class="action-panel-box" style="display: none; margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+          <strong id="splitPanelTitle" style="color: #1d4ed8;">別明細を切り出す</strong>
+          <button type="button" class="small-btn" onclick="closeSplitPanel()">閉じる</button>
+        </div>
+        <div id="splitSourceSummary" class="muted" style="margin-bottom: 10px;"></div>
+        <form id="splitEntryForm" onsubmit="handlePocketSplitSubmit(event)">
+          <input type="hidden" id="splitSourceId" />
+          <div class="form-grid">
+            <div>
+              <label for="splitAmountInput">切り出す金額（円）</label>
+              <input id="splitAmountInput" type="number" min="1" required oninput="updateSplitPreview()" />
+            </div>
+            <div>
+              <label for="splitTitleInput">切り出した明細の内容・摘要</label>
+              <input id="splitTitleInput" type="text" required placeholder="例: コンビニ昼食" />
+            </div>
+            <div>
+              <label for="splitCategoryInput">切り出した明細の分類</label>
+              <select id="splitCategoryInput" required>
+                <option value="食費" selected>食費</option>
+                <option value="交通">交通</option>
+                <option value="光熱費・水道料金">光熱費・水道料金</option>
+                <option value="推し活">推し活</option>
+                <option value="エンタメ">エンタメ</option>
+                <option value="ゲーム・課金">ゲーム・課金</option>
+                <option value="買い物・日用品">買い物・日用品</option>
+                <option value="交際費">交際費</option>
+                <option value="収入・おこづかい">収入・おこづかい</option>
+                <option value="その他">その他</option>
+              </select>
+            </div>
+            <div>
+              <label for="splitDateInput">日付</label>
+              <input id="splitDateInput" type="date" required />
+            </div>
+            <div>
+              <label for="splitMethodInput">手段</label>
+              <select id="splitMethodInput" required></select>
+            </div>
+            <div>
+              <label for="splitMemoInput">メモ（任意）</label>
+              <input id="splitMemoInput" type="text" placeholder="例: 思い出した分" />
+            </div>
+          </div>
+          <div id="splitPreviewText" class="notice-text" style="margin-top: 8px;"></div>
+          <div class="btn-group" style="margin-top: 10px;">
+            <button type="submit" class="primary">切り出して別明細にする</button>
+            <button type="button" onclick="closeSplitPanel()">キャンセル</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="passbook-wrap">
+        <table class="passbook-table">
+          <thead>
+            <tr>
+              <th>年月日</th>
+              <th>摘要・内容</th>
+              <th>分類 / 手段</th>
+              <th class="passbook-num">支出</th>
+              <th class="passbook-num">収入</th>
+              <th class="passbook-num">月内差引残高</th>
+              <th>メモ</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="pocketTableBody">
+            <tr><td colspan="8" class="muted">読み込み中...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <details id="subManagementDrawer" class="sub-menu-drawer">
+      <summary class="sub-menu-summary">
+        <div>
+          <strong style="font-size: 1.05rem;">⚙ サブスク・固定費の管理メニュー</strong>
+          <div class="muted" style="font-size: 0.8rem;">新規登録・名称変更・料金改定・停止期間</div>
+        </div>
+        <span class="badge">開閉メニュー</span>
+      </summary>
+      <div class="drawer-body">
+        <div class="sub-group-panel" style="margin-top: 0;">
+          <h3>① サブスク・固定費の新規登録</h3>
+          <form id="createForm" onsubmit="handleCreate(event)">
+            <div class="form-grid">
+              <div>
+                <label for="name">名称</label>
+                <input id="name" type="text" required />
+              </div>
+              <div>
+                <label for="price">金額（円）</label>
+                <input id="price" type="number" min="0" required />
+              </div>
+              <div>
+                <label for="billing_day">引き落とし日（1〜31）</label>
+                <input id="billing_day" type="number" min="1" max="31" required />
+              </div>
+              <div>
+                <label for="started_from">登録開始日（いつから）</label>
+                <input id="started_from" type="date" />
+              </div>
+              <div>
+                <label for="payment_method">支払方法</label>
+                <select id="payment_method" required></select>
+              </div>
+              <div>
+                <label for="categories">カテゴリー（複数選択可）</label>
+                <select id="categories" multiple required>
+                  <option value="エンタメ">エンタメ</option>
+                  <option value="音楽">音楽</option>
+                  <option value="ゲーム">ゲーム</option>
+                  <option value="通信">通信</option>
+                  <option value="通信・インフラ">通信・インフラ</option>
+                  <option value="住まい">住まい</option>
+                  <option value="生活・ショッピング">生活・ショッピング</option>
+                  <option value="仕事・学習">仕事・学習</option>
+                  <option value="その他">その他</option>
+                </select>
+              </div>
+            </div>
+            <div style="margin-top: 12px;">
+              <button type="submit" class="primary">登録する</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="sub-group-panel">
+          <h3>② 登録済みサブスクの編集・料金改定・停止設定</h3>
+          <div style="max-width: 460px; margin-bottom: 14px;">
+            <label for="targetSubId">対象のサブスク・固定費</label>
+            <select id="targetSubId" onchange="onTargetSubChange()" required></select>
+          </div>
+          <div class="sub-split-2col">
+            <div class="mini-box">
+              <h4>サービス名の変更</h4>
+              <form id="renameForm" onsubmit="handleRename(event)">
+                <div style="margin-bottom: 10px;">
+                  <label for="renamedName">新しいサービス名</label>
+                  <input id="renamedName" type="text" required />
+                </div>
+                <button type="submit" class="primary">サービス名を変更する</button>
+              </form>
+            </div>
+            <div class="mini-box">
+              <h4>料金改定の登録</h4>
+              <form id="priceChangeForm" onsubmit="handlePriceChange(event)">
+                <div class="form-grid" style="margin-bottom: 10px;">
+                  <div>
+                    <label for="newPrice">改定後の金額（円）</label>
+                    <input id="newPrice" type="number" min="0" required />
+                  </div>
+                  <div>
+                    <label for="effectiveFrom">適用開始日</label>
+                    <input id="effectiveFrom" type="date" required />
+                  </div>
+                </div>
+                <button type="submit" class="secondary-btn">料金改定を登録する</button>
+              </form>
+            </div>
+          </div>
+          <div class="sub-split-2col">
+            <div class="mini-box">
+              <h4>料金履歴</h4>
+              <table>
+                <thead><tr><th>適用開始日</th><th>料金</th><th>操作</th></tr></thead>
+                <tbody id="priceHistoryBody"></tbody>
+              </table>
+            </div>
+            <div class="mini-box">
+              <h4>停止期間の設定</h4>
+              <form id="pauseForm" onsubmit="handleAddPause(event)" style="margin-bottom: 12px;">
+                <div class="form-grid" style="margin-bottom: 10px;">
+                  <div>
+                    <label for="pauseFrom">停止開始日</label>
+                    <input id="pauseFrom" type="date" required />
+                  </div>
+                  <div>
+                    <label for="pauseUntil">停止終了日（長期なら空欄）</label>
+                    <input id="pauseUntil" type="date" />
+                  </div>
+                </div>
+                <button type="submit" class="warn-btn">停止期間を登録する</button>
+              </form>
+              <table>
+                <thead><tr><th>種別</th><th>期間</th><th>操作</th></tr></thead>
+                <tbody id="pauseListBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <script>
+    const API_BASE = window.location.protocol === "file:" ? "http://localhost:8001" : window.location.origin;
+    const AUTH_TOKEN_KEY = "finance_app_token";
+    const AUTO_SUB_PREFIX = "自動サブスク引き落とし:";
+    let authMode = "login";
+
+    const now = new Date();
+    let currentYear = now.getFullYear();
+    let currentMonth = now.getMonth() + 1;
+    let selectedDay = now.getDate();
+    let userPickedDay = false;
+    let currentView = "monthly";
+    let subscriptionsCache = [];
+    let walletsCache = [];
+    let pocketItemsCache = [];
+
+    let currentMonthlySubTotal = 0;
+    let currentPocketIncomeTotal = 0;
+    let currentPocketExpenseTotal = 0;
+    let currentAutoSubExpenseTotal = 0;
+    let currentWalletBalance = 0;
+
+    let dailyFlowMap = {};
+    let dailyDetailsMap = {};
+
+    function formatLocalDateInput(dObj) {
+      const y = dObj.getFullYear();
+      const m = String(dObj.getMonth() + 1).padStart(2, "0");
+      const d = String(dObj.getDate()).padStart(2, "0");
+      return y + "-" + m + "-" + d;
+    }
+
+    function setDefaultSubscriptionStartDate() {
+      const startInput = document.getElementById("started_from");
+      if (startInput && !startInput.value) {
+        startInput.value = formatLocalDateInput(now);
+      }
+    }
+
+    function isAutoSubEntry(item) {
+      if (!item || item.entry_type !== "expense") return false;
+      if (item.is_auto_sub === true) return true;
+      return String(item.memo || "").indexOf(AUTO_SUB_PREFIX) === 0;
+    }
+
+    function isTransferEntry(item) {
+      if (!item) return false;
+      if (item.category === "振替") return true;
+      const title = String(item.title || "");
+      return title.endsWith("へ移動");
+    }
+
+    function findPairedTransferEntry(targetItem) {
+      if (!targetItem || !isTransferEntry(targetItem)) return null;
+      const targetType = targetItem.entry_type === "expense" ? "income" : "expense";
+      const targetAmount = Number(targetItem.amount || 0);
+      const targetDate = String(targetItem.entry_date || "");
+      const targetMemo = String(targetItem.memo || "");
+
+      const candidates = pocketItemsCache.filter(function(item) {
+        if (Number(item.id) === Number(targetItem.id)) return false;
+        if (!isTransferEntry(item)) return false;
+        if (item.entry_type !== targetType) return false;
+        if (Number(item.amount || 0) !== targetAmount) return false;
+        if (String(item.entry_date || "") !== targetDate) return false;
+        return true;
+      });
+
+      if (candidates.length === 0) return null;
+
+      const exactMemoMatch = candidates.find(function(item) {
+        return String(item.memo || "") === targetMemo;
+      });
+      return exactMemoMatch || candidates[0];
+    }
+
+    function displayMemoText(memo) {
+      const m = String(memo || "");
+      if (m.indexOf(AUTO_SUB_PREFIX) === 0) return "自動引き落とし";
+      return m;
+    }
+
+    function getAuthToken() {
+      return localStorage.getItem(AUTH_TOKEN_KEY);
+    }
+
+    function setAuthToken(token) {
+      if (token) localStorage.setItem(AUTH_TOKEN_KEY, token);
+      else localStorage.removeItem(AUTH_TOKEN_KEY);
+    }
+
+    function showAuthView(errorText) {
+      document.getElementById("mainApp").style.display = "none";
+      document.getElementById("authSessionBar").style.display = "none";
+      document.getElementById("authCard").style.display = "block";
+      document.getElementById("authError").textContent = errorText || "";
+    }
+
+    function showMainView(username) {
+      document.getElementById("authCard").style.display = "none";
+      document.getElementById("authError").textContent = "";
+      document.getElementById("mainApp").style.display = "block";
+      document.getElementById("authSessionBar").style.display = "flex";
+      document.getElementById("loggedInUsername").textContent = "ユーザー: " + username;
+    }
+
+    function setAuthMode(mode) {
+      authMode = mode;
+      document.getElementById("authError").textContent = "";
+      document.getElementById("authModeLogin").classList.toggle("active", mode === "login");
+      document.getElementById("authModeRegister").classList.toggle("active", mode === "register");
+      document.getElementById("authSubmitBtn").textContent =
+        mode === "login" ? "ログインする" : "新規登録して始める";
+    }
+
+    async function apiFetch(path, options) {
+      const opts = options || {};
+      const headers = Object.assign({}, opts.headers || {});
+      if (opts.body && !headers["Content-Type"]) {
+        headers["Content-Type"] = "application/json";
+      }
+      const token = getAuthToken();
+      if (token) {
+        headers["Authorization"] = "Bearer " + token;
+      }
+      const res = await fetch(API_BASE + path, Object.assign({}, opts, { headers: headers }));
+      if (res.status === 401 && !path.startsWith("/auth/")) {
+        setAuthToken(null);
+        showAuthView("セッションが切れました。再度ログインしてください。");
+        throw new Error("Unauthorized");
+      }
+      return res;
+    }
+
+    async function handleAuthSubmit(event) {
+      event.preventDefault();
+      document.getElementById("authError").textContent = "";
+
+      const username = document.getElementById("authUsername").value.trim();
+      const password = document.getElementById("authPassword").value;
+      const endpoint = authMode === "login" ? "/auth/login" : "/auth/register";
+
+      try {
+        const res = await apiFetch(endpoint, {
+          method: "POST",
+          body: JSON.stringify({ username: username, password: password })
+        });
+        const data = await res.json().catch(function() { return {}; });
+        if (!res.ok) {
+          document.getElementById("authError").textContent = data.detail || "認証に失敗しました。";
+          return;
+        }
+        setAuthToken(data.token);
+        document.getElementById("authPassword").value = "";
+        showMainView(data.username);
+        await refreshAll();
+      } catch (err) {
+        if (!err || err.message !== "Unauthorized") {
+          document.getElementById("authError").textContent = "サーバーへ接続できませんでした。";
+        }
+      }
+    }
+
+    async function handleLogout() {
+      try {
+        await apiFetch("/auth/logout", { method: "POST" });
+      } catch (_) {}
+      setAuthToken(null);
+      showAuthView("");
+    }
+
+    function formatYen(amount) {
+      const n = Number(amount || 0);
+      const sign = n < 0 ? "-" : "";
+      return sign + "¥" + Math.abs(n).toLocaleString("ja-JP");
+    }
+
+    function formatSignedYen(netAmount) {
+      if (netAmount > 0) return "+" + formatYen(netAmount);
+      if (netAmount < 0) return "-" + formatYen(Math.abs(netAmount));
+      return "¥0";
+    }
+
+    function escapeHtml(text) {
+      return String(text || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function jumpToPocketLedger() {
+      const el = document.getElementById("pocketLedgerCard");
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function populateYearSelectElement(sel) {
+      if (!sel) return;
+      const minYear = 2020;
+      const maxYear = Math.max(now.getFullYear() + 5, currentYear + 2);
+      const needRebuild =
+        sel.options.length === 0 ||
+        Number(sel.options[sel.options.length - 1].value) > currentYear ||
+        Number(sel.options[0].value) < currentYear;
+
+      if (needRebuild) {
+        const startY = Math.min(minYear, currentYear - 1);
+        const endY = Math.max(maxYear, currentYear + 2);
+        sel.innerHTML = "";
+        for (let y = endY; y >= startY; y--) {
+          const opt = document.createElement("option");
+          opt.value = y;
+          opt.textContent = y + "年";
+          sel.appendChild(opt);
+        }
+      }
+      sel.value = String(currentYear);
+    }
+
+    function syncYearSelectors() {
+      populateYearSelectElement(document.getElementById("monthlyYearSelect"));
+      populateYearSelectElement(document.getElementById("annualYearSelect"));
+    }
+
+    function updateYearMonthLabel() {
+      document.getElementById("currentYearMonth").textContent = currentMonth + "月";
+      syncYearSelectors();
+    }
+
+    function clearMessages() {
+      document.getElementById("noticeMessage").textContent = "";
+      document.getElementById("errorMessage").textContent = "";
+    }
+
+    function resetDailyMaps() {
+      dailyFlowMap = {};
+      dailyDetailsMap = {};
+      const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+      for (let d = 1; d <= daysInMonth; d++) {
+        dailyFlowMap[d] = { income: 0, expense: 0 };
+        dailyDetailsMap[d] = [];
+      }
+      if (selectedDay > daysInMonth) selectedDay = daysInMonth;
+      if (selectedDay < 1) selectedDay = 1;
+    }
+
+    function ensureInitialSelectedDay() {
+      const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+      if (userPickedDay) {
+        if (selectedDay < 1 || selectedDay > daysInMonth) selectedDay = 1;
+        return;
+      }
+      const activeDays = Object.keys(dailyDetailsMap)
+        .map(Number)
+        .filter(function(d) { return (dailyDetailsMap[d] || []).length > 0; })
+        .sort(function(a, b) { return a - b; });
+
+      if (activeDays.length > 0) {
+        const todayDay = now.getDate();
+        if (currentYear === now.getFullYear() && currentMonth === now.getMonth() + 1 && activeDays.indexOf(todayDay) !== -1) {
+          selectedDay = todayDay;
+        } else {
+          selectedDay = activeDays[0];
+        }
+      } else {
+        selectedDay = 1;
+      }
+    }
+
+    function selectCalendarDay(dayNum) {
+      const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+      if (dayNum < 1 || dayNum > daysInMonth) return;
+      selectedDay = dayNum;
+      userPickedDay = true;
+      renderAllCalendars();
+    }
+
+    function renderDayDetailInto(panelId, dayNum) {
+      const panel = document.getElementById(panelId);
+      if (!panel) return;
+      const flow = dailyFlowMap[dayNum] || { income: 0, expense: 0 };
+      const income = Number(flow.income || 0);
+      const expense = Number(flow.expense || 0);
+      const net = income - expense;
+      const entries = dailyDetailsMap[dayNum] || [];
+
+      let netCls = "cal-net-zero";
+      if (net > 0) netCls = "cal-net-pos";
+      else if (net < 0) netCls = "cal-net-neg";
+
+      const itemsHtml = entries.length === 0
+        ? '<li class="muted" style="padding:4px 0;">この日の通帳明細はありません。</li>'
+        : entries.map(function(entry) {
+            const isIncome = entry.kind === "income";
+            const amtLabel = isIncome ? "+" + formatYen(entry.amount) : formatYen(entry.amount);
+            const amtColor = isIncome ? "#15803d" : "#dc2626";
+            const metaText = entry.meta ? ' <span class="badge">' + escapeHtml(entry.meta) + "</span>" : "";
+            const subText = entry.sub ? ' <span class="muted" style="font-size:0.78rem;">' + escapeHtml(entry.sub) + "</span>" : "";
+            return (
+              '<li class="day-detail-item">' +
+                "<div><strong>" + escapeHtml(entry.title) + "</strong>" + metaText + subText + "</div>" +
+                '<span style="font-weight:800;color:' + amtColor + ';white-space:nowrap;">' + amtLabel + "</span>" +
+              "</li>"
+            );
+          }).join("");
+
+      panel.innerHTML =
+        '<div class="day-detail-header">' +
+          '<strong style="font-size:0.9rem;">' + currentYear + "年" + currentMonth + "月" + dayNum + "日 の通帳明細</strong>" +
+          '<div style="font-size:0.8rem;font-weight:700;">' +
+            '<span style="color:#b91c1c;">支出 ' + formatYen(expense) + "</span> / " +
+            '<span class="' + netCls + '">収支 ' + formatSignedYen(net) + "</span>" +
+          "</div>" +
+        "</div>" +
+        '<ul class="day-detail-list">' + itemsHtml + "</ul>";
+    }
+
+    function renderDailyCalendarInto(gridId, titleId, detailPanelId) {
+      const grid = document.getElementById(gridId);
+      const titleEl = document.getElementById(titleId);
+      if (!grid || !titleEl) return;
+
+      titleEl.textContent = currentYear + "年" + currentMonth + "月 カレンダー（通帳明細のみ・振替除外）";
+      grid.innerHTML = "";
+
+      const dows = [
+        { label: "日", cls: "sun" },
+        { label: "月", cls: "" },
+        { label: "火", cls: "" },
+        { label: "水", cls: "" },
+        { label: "木", cls: "" },
+        { label: "金", cls: "" },
+        { label: "土", cls: "sat" }
+      ];
+
+      for (let i = 0; i < dows.length; i++) {
+        const div = document.createElement("div");
+        div.className = ("cal-dow " + dows[i].cls).trim();
+        div.textContent = dows[i].label;
+        grid.appendChild(div);
+      }
+
+      const firstDayOfWeek = new Date(currentYear, currentMonth - 1, 1).getDay();
+      const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+
+      for (let i = 0; i < firstDayOfWeek; i++) {
+        const emptyCell = document.createElement("div");
+        emptyCell.className = "cal-cell empty";
+        grid.appendChild(emptyCell);
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const flow = dailyFlowMap[d] || { income: 0, expense: 0 };
+        const income = Number(flow.income || 0);
+        const expense = Number(flow.expense || 0);
+        const net = income - expense;
+        const hasActivity = (dailyDetailsMap[d] || []).length > 0;
+        const isSelected = d === selectedDay;
+
+        const dowIndex = (firstDayOfWeek + d - 1) % 7;
+        const dayCls = dowIndex === 0 ? "sun" : dowIndex === 6 ? "sat" : "";
+
+        let netCls = "cal-net-zero";
+        if (net > 0) netCls = "cal-net-pos";
+        else if (net < 0) netCls = "cal-net-neg";
+
+        const cell = document.createElement("div");
+        cell.className = ("cal-cell " + (hasActivity ? "has-activity " : "") + (isSelected ? "selected-day" : "")).trim();
+        cell.onclick = (function(dayVal) {
+          return function() { selectCalendarDay(dayVal); };
+        })(d);
+
+        const expenseStr = expense > 0 ? formatYen(expense) : "¥0";
+        const linesHtml = hasActivity
+          ? '<div class="cal-lines"><div class="cal-expense-line">' + expenseStr + '</div><div class="cal-net-line ' + netCls + '">' + formatSignedYen(net) + "</div></div>"
+          : "";
+
+        cell.innerHTML = '<div class="cal-day-num ' + dayCls + '">' + d + "日</div>" + linesHtml;
+        grid.appendChild(cell);
+      }
+
+      renderDayDetailInto(detailPanelId, selectedDay);
+    }
+
+    function renderAllCalendars() {
+      ensureInitialSelectedDay();
+      renderDailyCalendarInto("calendarGrid", "calendarTitle", "calendarDayDetail");
+      renderDailyCalendarInto("annualCalendarGrid", "annualCalendarTitle", "annualCalendarDayDetail");
+    }
+
+    function updateMonthlyExpenseSummary() {
+      const manualPocketExpense = Math.max(0, currentPocketExpenseTotal - currentAutoSubExpenseTotal);
+      const totalUsed = currentMonthlySubTotal + manualPocketExpense;
+
+      document.getElementById("overallIncomeTitle").textContent = currentYear + "年" + currentMonth + "月の収入";
+      document.getElementById("overallIncomeValue").textContent = formatYen(currentPocketIncomeTotal);
+
+      document.getElementById("overallExpenseTitle").textContent = currentYear + "年" + currentMonth + "月に使った合計";
+      document.getElementById("overallExpenseValue").textContent = formatYen(totalUsed);
+      document.getElementById("overallExpenseBreakdown").textContent =
+        "サブスク " + formatYen(currentMonthlySubTotal) + " ＋ おこづかい支出 " + formatYen(manualPocketExpense);
+    }
+
+    function applyWalletPayload(data) {
+      currentWalletBalance = Number(data.current_balance || 0);
+      walletsCache = Array.isArray(data.wallets) ? data.wallets : [];
+
+      const totalEl = document.getElementById("currentWalletBalanceValue");
+      totalEl.textContent = formatYen(currentWalletBalance);
+      totalEl.style.color = currentWalletBalance >= 0 ? "#1d4ed8" : "#dc2626";
+
+      const listEl = document.getElementById("walletBreakdownList");
+      if (listEl) {
+        listEl.innerHTML = walletsCache.map(function(w) {
+          const wAmt = Number(w.balance || 0);
+          const amtColor = wAmt >= 0 ? "#0f172a" : "#dc2626";
+          const delBtn = w.is_default
+            ? ""
+            : '<button type="button" class="danger small-btn" onclick="handleDeleteWallet(' + w.id + ')">削除</button>';
+          return (
+            '<li class="wallet-list-row">' +
+              '<span class="wallet-row-name">' + escapeHtml(w.name) + "</span>" +
+              '<div class="wallet-row-right">' +
+                '<span class="wallet-row-amount" style="color:' + amtColor + ';">' + formatYen(wAmt) + "</span>" +
+                '<button type="button" class="small-btn" onclick="quickPickWalletForAdjust(' + w.id + ", " + wAmt + ')">修正</button>' +
+                delBtn +
+              "</div>" +
+            "</li>"
+          );
+        }).join("");
+      }
+
+      const targetSel = document.getElementById("walletTargetSelect");
+      const fromSel = document.getElementById("transferFromSelect");
+      const toSel = document.getElementById("transferToSelect");
+      const renameSel = document.getElementById("renameWalletSelect");
+      const pocketMethodSel = document.getElementById("pocketMethod");
+      const subMethodSel = document.getElementById("payment_method");
+      const splitMethodSel = document.getElementById("splitMethodInput");
+      const editMethodSel = document.getElementById("editEntryMethod");
+
+      const prevTarget = targetSel ? targetSel.value : "";
+      const prevFrom = fromSel ? fromSel.value : "";
+      const prevTo = toSel ? toSel.value : "";
+      const prevRename = renameSel ? renameSel.value : "";
+      const prevPocketMethod = pocketMethodSel ? pocketMethodSel.value : "";
+      const prevSubMethod = subMethodSel ? subMethodSel.value : "";
+      const prevSplitMethod = splitMethodSel ? splitMethodSel.value : "";
+      const prevEditMethod = editMethodSel ? editMethodSel.value : "";
+
+      if (targetSel) {
+        targetSel.innerHTML = walletsCache.map(function(w) {
+          return '<option value="' + w.id + '">' + escapeHtml(w.name) + "（現在 " + formatYen(w.balance) + "）</option>";
+        }).join("");
+        if (prevTarget && walletsCache.some(function(w) { return String(w.id) === prevTarget; })) targetSel.value = prevTarget;
+      }
+
+      const nameOptionsHtml = walletsCache.map(function(w) {
+        return '<option value="' + w.id + '">' + escapeHtml(w.name) + "</option>";
+      }).join("");
+
+      if (fromSel) {
+        fromSel.innerHTML = nameOptionsHtml;
+        if (prevFrom && walletsCache.some(function(w) { return String(w.id) === prevFrom; })) fromSel.value = prevFrom;
+      }
+      if (toSel) {
+        toSel.innerHTML = nameOptionsHtml;
+        if (prevTo && walletsCache.some(function(w) { return String(w.id) === prevTo; })) toSel.value = prevTo;
+        else if (walletsCache.length > 1) toSel.value = String(walletsCache[1].id);
+      }
+      if (renameSel) {
+        renameSel.innerHTML = nameOptionsHtml;
+        if (prevRename && walletsCache.some(function(w) { return String(w.id) === prevRename; })) renameSel.value = prevRename;
+      }
+
+      const methodOptionsHtml = walletsCache.map(function(w) {
+        return '<option value="' + escapeHtml(w.name) + '">' + escapeHtml(w.name) + "</option>";
+      }).join("");
+
+      [
+        { el: pocketMethodSel, prev: prevPocketMethod },
+        { el: subMethodSel, prev: prevSubMethod },
+        { el: splitMethodSel, prev: prevSplitMethod },
+        { el: editMethodSel, prev: prevEditMethod }
+      ].forEach(function(item) {
+        if (!item.el) return;
+        item.el.innerHTML = methodOptionsHtml;
+        if (item.prev && walletsCache.some(function(w) { return w.name === item.prev; })) {
+          item.el.value = item.prev;
+        }
+      });
+    }
+
+    function quickPickWalletForAdjust(walletId, currentVal) {
+      const drawer = document.getElementById("walletOpsDrawer");
+      if (drawer) drawer.open = true;
+      const sel = document.getElementById("walletTargetSelect");
+      const inp = document.getElementById("walletTargetInput");
+      if (sel) sel.value = String(walletId);
+      if (inp) {
+        inp.value = String(currentVal);
+        inp.focus();
+      }
+    }
+
+    async function loadWalletBalance() {
+      const res = await apiFetch("/wallet/balance");
+      if (!res.ok) return;
+      const data = await res.json();
+      applyWalletPayload(data);
+    }
+
+    function upsertPocketEntryLocally(entry) {
+      if (!entry || !entry.entry_date) return false;
+      const parts = String(entry.entry_date).split("-");
+      const entryYear = Number(parts[0]);
+      const entryMonth = Number(parts[1]);
+
+      if (entryYear !== Number(currentYear) || entryMonth !== Number(currentMonth)) {
+        return false;
+      }
+
+      const idx = pocketItemsCache.findIndex(function(x) {
+        return Number(x.id) === Number(entry.id);
+      });
+      if (idx >= 0) {
+        pocketItemsCache[idx] = entry;
+      } else {
+        pocketItemsCache.push(entry);
+      }
+      return true;
+    }
+
+    async function handleWalletAdjust(event) {
+      event.preventDefault();
+      clearMessages();
+
+      const walletSelectEl = document.getElementById("walletTargetSelect");
+      const targetInputEl = document.getElementById("walletTargetInput");
+      const noteInputEl = document.getElementById("walletNoteInput");
+
+      const walletId = Number(walletSelectEl.value);
+      const targetBalance = Number(targetInputEl.value);
+      const note = noteInputEl.value.trim();
+
+      const res = await apiFetch("/wallet/balance", {
+        method: "PUT",
+        body: JSON.stringify({
+          wallet_id: walletId,
+          target_balance: targetBalance,
+          note: note
+        })
+      });
+
+      const data = await res.json().catch(function() { return {}; });
+      if (!res.ok) {
+        document.getElementById("errorMessage").textContent = data.detail || "残高の更新に失敗しました。";
+        return;
+      }
+
+      applyWalletPayload(data);
+      targetInputEl.value = "";
+      noteInputEl.value = "";
+
+      const diff = Number(data.adjustment_added || 0);
+      let msg = data.wallet_name + " の残高を " + formatYen(targetBalance) + " に更新しました。";
+      if (diff > 0) {
+        msg += " 差額 " + formatSignedYen(diff) + " を通帳に「雑所得」として記録しました。";
+      } else if (diff < 0) {
+        msg += " 差額 " + formatSignedYen(diff) + " を通帳に「雑損益」として記録しました。";
+      }
+
+      if (data.auto_entry && data.auto_entry.entry_date) {
+        const parts = String(data.auto_entry.entry_date).split("-");
+        const entryYear = Number(parts[0]);
+        const entryMonth = Number(parts[1]);
+
+        if (entryYear && entryMonth && (entryYear !== Number(currentYear) || entryMonth !== Number(currentMonth))) {
+          currentYear = entryYear;
+          currentMonth = entryMonth;
+          updateYearMonthLabel();
+          await loadPocketEntries();
+        } else {
+          upsertPocketEntryLocally(data.auto_entry);
+          await loadPocketEntries();
+        }
+      }
+
+      document.getElementById("noticeMessage").textContent = msg;
+    }
+
+    async function handleWalletTransfer(event) {
+      event.preventDefault();
+      clearMessages();
+      const fromWalletId = Number(document.getElementById("transferFromSelect").value);
+      const toWalletId = Number(document.getElementById("transferToSelect").value);
+      const amount = Number(document.getElementById("transferAmountInput").value);
+      const memo = document.getElementById("transferMemoInput").value.trim();
+
+      const res = await apiFetch("/wallets/transfer", {
+        method: "POST",
+        body: JSON.stringify({ from_wallet_id: fromWalletId, to_wallet_id: toWalletId, amount: amount, memo: memo })
+      });
+      const data = await res.json().catch(function() { return {}; });
+      if (!res.ok) {
+        document.getElementById("errorMessage").textContent = data.detail || "振替に失敗しました。";
+        return;
+      }
+      applyWalletPayload(data);
+      document.getElementById("transferAmountInput").value = "";
+      document.getElementById("transferMemoInput").value = "";
+      document.getElementById("noticeMessage").textContent =
+        data.from_name + " から " + data.to_name + " へ " + formatYen(data.amount) + " を移動しました。";
+      await loadPocketEntries();
+    }
+
+    async function handleAddWallet(event) {
+      event.preventDefault();
+      clearMessages();
+      const nameInput = document.getElementById("newWalletName");
+      const initInput = document.getElementById("newWalletInitial");
+      const name = nameInput.value.trim();
+      const balance = Number(initInput.value || 0);
+
+      const res = await apiFetch("/wallets", {
+        method: "POST",
+        body: JSON.stringify({ name: name, balance: balance })
+      });
+      const data = await res.json().catch(function() { return {}; });
+      if (!res.ok) {
+        document.getElementById("errorMessage").textContent = data.detail || "項目の追加に失敗しました。";
+        return;
+      }
+      applyWalletPayload(data);
+      nameInput.value = "";
+      initInput.value = "0";
+      document.getElementById("noticeMessage").textContent = "項目「" + name + "」を追加しました。";
+    }
+
+    async function handleRenameWallet(event) {
+      event.preventDefault();
+      clearMessages();
+      const walletId = Number(document.getElementById("renameWalletSelect").value);
+      const newName = document.getElementById("renameWalletInput").value.trim();
+
+      const res = await apiFetch("/wallets/" + walletId, {
+        method: "PUT",
+        body: JSON.stringify({ name: newName })
+      });
+      const data = await res.json().catch(function() { return {}; });
+      if (!res.ok) {
+        document.getElementById("errorMessage").textContent = data.detail || "名称変更に失敗しました。";
+        return;
+      }
+      applyWalletPayload(data);
+      document.getElementById("renameWalletInput").value = "";
+      document.getElementById("noticeMessage").textContent =
+        "「" + data.old_name + "」を「" + data.new_name + "」に変更しました。";
+      await refreshAll();
+    }
+
+    async function handleDeleteWallet(walletId) {
+      clearMessages();
+      const res = await apiFetch("/wallets/" + walletId, { method: "DELETE" });
+      const data = await res.json().catch(function() { return {}; });
+      if (!res.ok) {
+        document.getElementById("errorMessage").textContent = data.detail || "項目の削除に失敗しました。";
+        return;
+      }
+      applyWalletPayload(data);
+      document.getElementById("noticeMessage").textContent = "項目を削除しました。";
+    }
+
+    function setDefaultPocketDate() {
+      const dateInput = document.getElementById("pocketDate");
+      if (!dateInput) return;
+      const mm = String(currentMonth).padStart(2, "0");
+      const day = (now.getFullYear() === currentYear && now.getMonth() + 1 === currentMonth)
+        ? String(now.getDate()).padStart(2, "0")
+        : "01";
+      dateInput.value = currentYear + "-" + mm + "-" + day;
+    }
+
+    function switchView(view) {
+      currentView = view;
+      document.getElementById("tabMonthly").classList.toggle("active", view === "monthly");
+      document.getElementById("tabAnnual").classList.toggle("active", view === "annual");
+      document.getElementById("monthlyView").style.display = view === "monthly" ? "block" : "none";
+      document.getElementById("annualView").style.display = view === "annual" ? "block" : "none";
+      refreshAll();
+    }
+
+    function changeMonth(delta) {
+      const target = new Date(currentYear, currentMonth - 1 + delta, 1);
+      currentYear = target.getFullYear();
+      currentMonth = target.getMonth() + 1;
+      userPickedDay = false;
+      refreshAll();
+    }
+
+    function changeYear(delta) {
+      currentYear += Number(delta);
+      userPickedDay = false;
+      refreshAll();
+    }
+
+    function selectYear(yearVal) {
+      const parsed = Number(yearVal);
+      if (!Number.isNaN(parsed)) {
+        currentYear = parsed;
+        userPickedDay = false;
+        refreshAll();
+      }
+    }
+
+    function jumpToToday() {
+      currentYear = now.getFullYear();
+      currentMonth = now.getMonth() + 1;
+      selectedDay = now.getDate();
+      userPickedDay = true;
+      refreshAll();
+    }
+
+    async function loadSubscriptionOptions() {
+      const res = await apiFetch("/subscriptions");
+      if (!res.ok) return;
+      subscriptionsCache = (await res.json()) || [];
+
+      const select = document.getElementById("targetSubId");
+      const prevValue = select.value;
+      select.innerHTML = "";
+
+      if (subscriptionsCache.length === 0) {
+        select.innerHTML = '<option value="">登録済みサブスクがありません</option>';
+        document.getElementById("renamedName").value = "";
+        return;
+      }
+
+      for (let i = 0; i < subscriptionsCache.length; i++) {
+        const s = subscriptionsCache[i];
+        const opt = document.createElement("option");
+        opt.value = s.id;
+        const startLabel = s.started_from ? (" / 開始:" + s.started_from) : "";
+        opt.textContent = s.name + "（現在: " + formatYen(s.price) + " / 毎月" + s.billing_day + "日" + startLabel + "）";
+        select.appendChild(opt);
+      }
+      if (prevValue && Array.from(select.options).some(function(o) { return o.value === prevValue; })) {
+        select.value = prevValue;
+      }
+      syncRenameInput();
+    }
+
+    function syncRenameInput() {
+      const subId = Number(document.getElementById("targetSubId").value);
+      const found = subscriptionsCache.find(function(s) { return Number(s.id) === subId; });
+      document.getElementById("renamedName").value = found ? found.name : "";
+    }
+
+    async function onTargetSubChange() {
+      syncRenameInput();
+      await loadPriceHistory();
+      await loadPauses();
+    }
+
+    async function loadPriceHistory() {
+      const subId = document.getElementById("targetSubId").value;
+      const tbody = document.getElementById("priceHistoryBody");
+      if (!subId) {
+        tbody.innerHTML = '<tr><td colspan="3" class="muted">対象のサブスクがありません。</td></tr>';
+        return;
+      }
+      const res = await apiFetch("/subscriptions/" + subId + "/price-changes");
+      if (!res.ok) return;
+      const list = (await res.json()) || [];
+      tbody.innerHTML = list.length === 0
+        ? '<tr><td colspan="3" class="muted">料金履歴がありません。</td></tr>'
+        : list.map(function(h) {
+            return (
+              "<tr>" +
+                "<td>" + escapeHtml(h.effective_from) + "</td>" +
+                "<td><strong>" + formatYen(h.price) + "</strong></td>" +
+                '<td><button type="button" class="danger" onclick="handleDeletePriceChange(' + subId + ", " + h.id + ')">削除</button></td>' +
+              "</tr>"
+            );
+          }).join("");
+    }
+
+    async function loadPauses() {
+      const subId = document.getElementById("targetSubId").value;
+      const tbody = document.getElementById("pauseListBody");
+      if (!subId) {
+        tbody.innerHTML = '<tr><td colspan="3" class="muted">対象のサブスクがありません。</td></tr>';
+        return;
+      }
+      const res = await apiFetch("/subscriptions/" + subId + "/pauses");
+      if (!res.ok) return;
+      const list = (await res.json()) || [];
+      tbody.innerHTML = list.length === 0
+        ? '<tr><td colspan="3" class="muted">停止期間はありません。</td></tr>'
+        : list.map(function(p) {
+            const kind = p.pause_until ? "一時停止" : "長期停止";
+            const period = p.pause_until ? (p.pause_from + " 〜 " + p.pause_until) : (p.pause_from + " 〜 ");
+            return (
+              "<tr>" +
+                '<td><span class="paused-badge">' + kind + "</span></td>" +
+                "<td>" + escapeHtml(period) + "</td>" +
+                '<td><button type="button" class="danger" onclick="handleDeletePause(' + subId + ", " + p.id + ')">解除</button></td>' +
+              "</tr>"
+            );
+          }).join("");
+    }
+
+    function closeSplitPanel() {
+      const panel = document.getElementById("splitEntryPanel");
+      if (panel) panel.style.display = "none";
+    }
+
+    function closeEditPanel() {
+      const panel = document.getElementById("editEntryPanel");
+      if (panel) panel.style.display = "none";
+    }
+
+    function openSplitPanel(entryId) {
+      const item = pocketItemsCache.find(function(x) { return Number(x.id) === Number(entryId); });
+      if (!item) return;
+      closeEditPanel();
+
+      const panel = document.getElementById("splitEntryPanel");
+      document.getElementById("splitSourceId").value = String(item.id);
+      document.getElementById("splitSourceSummary").textContent =
+        "元の明細: " + item.entry_date + " / " + item.title + "（" + (item.category || "その他") + " / " + formatYen(item.amount) + "）";
+
+      const amtInput = document.getElementById("splitAmountInput");
+      amtInput.max = String(item.amount);
+      amtInput.value = "";
+      document.getElementById("splitTitleInput").value = "";
+      document.getElementById("splitCategoryInput").value = item.category === "雑損益" ? "食費" : (item.category || "その他");
+      document.getElementById("splitDateInput").value = item.entry_date;
+      const methodSel = document.getElementById("splitMethodInput");
+      if (methodSel && walletsCache.some(function(w) { return w.name === item.payment_method; })) {
+        methodSel.value = item.payment_method;
+      }
+      document.getElementById("splitMemoInput").value = "";
+
+      panel.style.display = "block";
+      updateSplitPreview();
+      amtInput.focus();
+      panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function updateSplitPreview() {
+      const id = Number(document.getElementById("splitSourceId").value);
+      const item = pocketItemsCache.find(function(x) { return Number(x.id) === id; });
+      const previewEl = document.getElementById("splitPreviewText");
+      if (!item || !previewEl) return;
+
+      const splitVal = Number(document.getElementById("splitAmountInput").value || 0);
+      const origVal = Number(item.amount || 0);
+      if (splitVal <= 0) {
+        previewEl.textContent = "切り出す金額を入力してください（最大 " + formatYen(origVal) + "）。";
+        return;
+      }
+      if (splitVal > origVal) {
+        previewEl.textContent = "元の金額（" + formatYen(origVal) + "）を超えています。";
+        return;
+      }
+      const remVal = origVal - splitVal;
+      previewEl.textContent =
+        "元の「" + item.title + "」は " + formatYen(remVal) + " になり、" + formatYen(splitVal) + " が別明細として追加されます。";
+    }
+
+    async function handlePocketSplitSubmit(event) {
+      event.preventDefault();
+      clearMessages();
+
+      const entryId = Number(document.getElementById("splitSourceId").value);
+      const splitAmount = Number(document.getElementById("splitAmountInput").value);
+      const title = document.getElementById("splitTitleInput").value.trim();
+      const category = document.getElementById("splitCategoryInput").value;
+      const entryDate = document.getElementById("splitDateInput").value;
+      const paymentMethod = document.getElementById("splitMethodInput").value;
+      const memo = document.getElementById("splitMemoInput").value.trim();
+
+      const res = await apiFetch("/pocket-entries/" + entryId + "/split", {
+        method: "POST",
+        body: JSON.stringify({
+          split_amount: splitAmount,
+          title: title,
+          category: category,
+          entry_date: entryDate,
+          payment_method: paymentMethod,
+          memo: memo
+        })
+      });
+      const data = await res.json().catch(function() { return {}; });
+      if (!res.ok) {
+        document.getElementById("errorMessage").textContent = data.detail || "別明細の切り出しに失敗しました。";
+        return;
+      }
+      closeSplitPanel();
+      document.getElementById("noticeMessage").textContent =
+        formatYen(splitAmount) + " を「" + title + "」として別明細に切り出しました。";
+      await refreshAll();
+    }
+
+    function openEditPanel(entryId) {
+      const item = pocketItemsCache.find(function(x) { return Number(x.id) === Number(entryId); });
+      if (!item) return;
+      closeSplitPanel();
+
+      const panel = document.getElementById("editEntryPanel");
+      document.getElementById("editEntryId").value = String(item.id);
+      document.getElementById("editEntryType").value = item.entry_type || "expense";
+      document.getElementById("editEntryAmount").value = String(item.amount || 0);
+      document.getElementById("editEntryDate").value = item.entry_date;
+      document.getElementById("editEntryTitle").value = item.title || "";
+      document.getElementById("editEntryCategory").value = item.category || "その他";
+      document.getElementById("editEntryMemo").value = item.memo || "";
+
+      const methodSel = document.getElementById("editEntryMethod");
+      if (methodSel && walletsCache.some(function(w) { return w.name === item.payment_method; })) {
+        methodSel.value = item.payment_method;
+      }
+
+      panel.style.display = "block";
+      document.getElementById("editEntryAmount").focus();
+      panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    async function handlePocketEditSubmit(event) {
+      event.preventDefault();
+      clearMessages();
+
+      const entryId = Number(document.getElementById("editEntryId").value);
+      const payload = {
+        entry_type: document.getElementById("editEntryType").value,
+        amount: Number(document.getElementById("editEntryAmount").value),
+        entry_date: document.getElementById("editEntryDate").value,
+        title: document.getElementById("editEntryTitle").value.trim(),
+        category: document.getElementById("editEntryCategory").value,
+        payment_method: document.getElementById("editEntryMethod").value,
+        memo: document.getElementById("editEntryMemo").value.trim()
+      };
+
+      const res = await apiFetch("/pocket-entries/" + entryId, {
+        method: "PUT",
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(function() { return {}; });
+      if (!res.ok) {
+        document.getElementById("errorMessage").textContent = data.detail || "明細の変更に失敗しました。";
+        return;
+      }
+      closeEditPanel();
+      document.getElementById("noticeMessage").textContent = "通帳明細を変更しました。";
+      await refreshAll();
+    }
+
+    async function loadPocketEntries() {
+      const tbody = document.getElementById("pocketTableBody");
+      if (!tbody) return;
+      const res = await apiFetch("/pocket-entries?year=" + currentYear + "&month=" + currentMonth);
+      if (!res.ok) return;
+      const data = await res.json();
+
+      pocketItemsCache = Array.isArray(data.items) ? data.items : [];
+      currentPocketIncomeTotal = Number(data.income_total || 0);
+      currentPocketExpenseTotal = Number(data.expense_total || 0);
+      currentAutoSubExpenseTotal = Number(data.auto_sub_expense_total || 0);
+      updateMonthlyExpenseSummary();
+
+      document.getElementById("pocketMonthLabel").textContent = data.year + "年" + data.month + "月 通帳明細";
+      document.getElementById("pocketBreakdown").textContent =
+        "収入: " + formatYen(currentPocketIncomeTotal) + " / 支出: " + formatYen(currentPocketExpenseTotal) + "（" + data.count + "件）";
+
+      const bal = Number(data.balance || 0);
+      const balEl = document.getElementById("pocketBalance");
+      balEl.textContent = "月間差引 " + formatSignedYen(bal);
+      balEl.style.color = bal >= 0 ? "#15803d" : "#dc2626";
+
+      resetDailyMaps();
+
+      if (pocketItemsCache.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="muted">この月の通帳明細はまだありません。</td></tr>';
+      } else {
+        const sortedItems = pocketItemsCache.slice().sort(function(a, b) {
+          const dCmp = String(a.entry_date || "").localeCompare(String(b.entry_date || ""));
+          if (dCmp !== 0) return dCmp;
+          return Number(a.id || 0) - Number(b.id || 0);
+        });
+
+        let runningBalance = 0;
+        tbody.innerHTML = sortedItems.map(function(item) {
+          const amount = Number(item.amount || 0);
+          const dayNum = Number(String(item.entry_date || "").slice(8, 10));
+          const isIncome = item.entry_type === "income";
+          const autoSub = isAutoSubEntry(item);
+          const transferItem = isTransferEntry(item);
+
+          if (!transferItem && dayNum >= 1 && dailyFlowMap[dayNum]) {
+            if (isIncome) {
+              dailyFlowMap[dayNum].income += amount;
+            } else {
+              dailyFlowMap[dayNum].expense += amount;
+            }
+          }
+          if (!transferItem && dayNum >= 1 && dailyDetailsMap[dayNum]) {
+            dailyDetailsMap[dayNum].push({
+              kind: isIncome ? "income" : "expense",
+              title: item.title || "おこづかい明細",
+              amount: amount,
+              meta: (autoSub ? "自動引落 / " : "") + (item.category || "その他") + " / " + (item.payment_method || "その他"),
+              sub: displayMemoText(item.memo || "")
+            });
+          }
+
+          if (isIncome) runningBalance += amount;
+          else runningBalance -= amount;
+
+          const runColor = runningBalance >= 0 ? "#1e293b" : "#dc2626";
+          const splitBtnHtml = amount > 0
+            ? '<button type="button" class="split-btn small-btn" onclick="openSplitPanel(' + item.id + ')">切り出し</button>'
+            : "";
+          const autoBadgeHtml = autoSub ? '<span class="auto-badge">自動引落</span>' : "";
+          const transferBadgeHtml = transferItem ? '<span class="badge">振替</span>' : "";
+
+          return (
+            "<tr>" +
+              '<td style="white-space:nowrap;font-weight:600;">' + escapeHtml(item.entry_date) + "</td>" +
+              "<td><strong>" + escapeHtml(item.title) + "</strong>" + autoBadgeHtml + transferBadgeHtml + "</td>" +
+              '<td><span class="badge">' + escapeHtml(item.category || "その他") + '</span><span class="method-badge">' + escapeHtml(item.payment_method || "その他") + "</span></td>" +
+              '<td class="passbook-num" style="color:#dc2626;font-weight:700;">' + (!isIncome ? formatYen(amount) : "-") + "</td>" +
+              '<td class="passbook-num" style="color:#15803d;font-weight:700;">' + (isIncome ? formatYen(amount) : "-") + "</td>" +
+              '<td class="passbook-num" style="color:' + runColor + ';font-weight:800;">' + formatSignedYen(runningBalance) + "</td>" +
+              '<td class="muted">' + escapeHtml(displayMemoText(item.memo || "")) + "</td>" +
+              '<td><div class="btn-group" style="gap:4px;">' +
+                splitBtnHtml +
+                '<button type="button" class="edit-btn small-btn" onclick="openEditPanel(' + item.id + ')">編集</button>' +
+                '<button type="button" class="danger" onclick="handlePocketDelete(' + item.id + ')">削除</button>' +
+              "</div></td>" +
+            "</tr>"
+          );
+        }).join("");
+      }
+      renderAllCalendars();
+    }
+
+    async function loadMonthly() {
+      const res = await apiFetch("/subscriptions/monthly?year=" + currentYear + "&month=" + currentMonth);
+      if (!res.ok) return;
+      const data = await res.json();
+
+      currentMonthlySubTotal = Number(data.total_monthly_price || 0);
+      updateMonthlyExpenseSummary();
+
+      document.getElementById("monthlyLabel").textContent = data.year + "年" + data.month + "月の引き落とし予定";
+      document.getElementById("monthlyCount").textContent = "引き落とし対象: " + data.count + "件";
+      document.getElementById("monthlyTotal").textContent = formatYen(currentMonthlySubTotal);
+
+      const tbody = document.getElementById("monthlyTableBody");
+      if (!data.items || data.items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="muted">この月の引き落とし予定はありません。</td></tr>';
+      } else {
+        tbody.innerHTML = data.items.map(function(item) {
+          const price = Number(item.price || 0);
+          const cats = (item.categories || []).map(function(c) { return '<span class="badge">' + escapeHtml(c) + "</span>"; }).join("");
+          const billedBadge = item.already_billed ? '<span class="auto-badge">通帳反映済</span>' : "";
+          return (
+            "<tr>" +
+              "<td>" + escapeHtml(item.billing_date) + "</td>" +
+              "<td><strong>" + escapeHtml(item.name) + "</strong>" + billedBadge + "</td>" +
+              "<td>" + formatYen(price) + "</td>" +
+              "<td>" + cats + "</td>" +
+              "<td>" + escapeHtml(item.payment_method) + "</td>" +
+              '<td><button type="button" class="danger" onclick="handleDelete(' + item.id + ')">削除</button></td>' +
+            "</tr>"
+          );
+        }).join("");
+      }
+
+      const pausedBox = document.getElementById("monthlyPausedBox");
+      const pausedList = document.getElementById("monthlyPausedList");
+      if (data.paused_items && data.paused_items.length > 0) {
+        pausedBox.style.display = "block";
+        pausedList.innerHTML = data.paused_items.map(function(p) {
+          return "<li><strong>" + escapeHtml(p.name) + "</strong>（予定日: " + escapeHtml(p.billing_date) + "）</li>";
+        }).join("");
+      } else {
+        pausedBox.style.display = "none";
+        pausedList.innerHTML = "";
+      }
+    }
+
+    async function loadAnnual() {
+      const res = await apiFetch("/subscriptions/annual?year=" + currentYear);
+      if (!res.ok) return;
+      const data = await res.json();
+      document.getElementById("annualLabel").textContent = data.year + "年の年間予定";
+      document.getElementById("annualTotal").textContent = formatYen(data.annual_total_price);
+
+      const grid = document.getElementById("annualMonthsGrid");
+      grid.innerHTML = (data.months || []).map(function(m) {
+        const listItems = (m.schedules || []).map(function(s) {
+          return "<li><span>" + escapeHtml(s.billing_date.slice(5)) + " " + escapeHtml(s.name) + "</span><span>" + formatYen(s.price) + "</span></li>";
+        }).join("");
+        return (
+          '<div class="month-card">' +
+            '<div class="month-header"><span>' + m.month + "月</span><span>" + formatYen(m.total_price) + "</span></div>" +
+            '<ul class="month-list">' + (listItems || '<li class="muted">予定なし</li>') + "</ul>" +
+          "</div>"
+        );
+      }).join("");
+    }
+
+    async function refreshAll() {
+      if (!getAuthToken()) return;
+      updateYearMonthLabel();
+      setDefaultPocketDate();
+      setDefaultSubscriptionStartDate();
+      resetDailyMaps();
+      renderAllCalendars();
+      await loadWalletBalance();
+      await loadSubscriptionOptions();
+      await loadPriceHistory();
+      await loadPauses();
+      await loadMonthly();
+      await loadPocketEntries();
+      if (currentView === "annual") await loadAnnual();
+    }
+
+    async function handleCreate(event) {
+      event.preventDefault();
+      clearMessages();
+      const name = document.getElementById("name").value.trim();
+      const price = Number(document.getElementById("price").value);
+      const billing_day = Number(document.getElementById("billing_day").value);
+      const started_from_raw = document.getElementById("started_from").value;
+      const started_from = started_from_raw ? started_from_raw : null;
+      const payment_method = document.getElementById("payment_method").value;
+      const categories = Array.from(document.getElementById("categories").selectedOptions).map(function(o) { return o.value; });
+      if (categories.length === 0) return;
+
+      const res = await apiFetch("/subscriptions", {
+        method: "POST",
+        body: JSON.stringify({
+          name: name,
+          price: price,
+          billing_day: billing_day,
+          started_from: started_from,
+          categories: categories,
+          payment_method: payment_method
+        })
+      });
+      if (res.ok) {
+        document.getElementById("createForm").reset();
+        setDefaultSubscriptionStartDate();
+        document.getElementById("noticeMessage").textContent = "サブスクを登録しました。";
+        await refreshAll();
+      }
+    }
+
+    async function handleRename(event) {
+      event.preventDefault();
+      clearMessages();
+      const subId = document.getElementById("targetSubId").value;
+      const newName = document.getElementById("renamedName").value.trim();
+      const res = await apiFetch("/subscriptions/" + subId, {
+        method: "PUT",
+        body: JSON.stringify({ name: newName })
+      });
+      if (res.ok) {
+        document.getElementById("noticeMessage").textContent = "サービス名を変更しました。";
+        await refreshAll();
+      }
+    }
+
+    async function handlePriceChange(event) {
+      event.preventDefault();
+      clearMessages();
+      const subId = document.getElementById("targetSubId").value;
+      const price = Number(document.getElementById("newPrice").value);
+      const effective_from = document.getElementById("effectiveFrom").value;
+      const res = await apiFetch("/subscriptions/" + subId + "/price-changes", {
+        method: "POST",
+        body: JSON.stringify({ price: price, effective_from: effective_from })
+      });
+      if (res.ok) {
+        document.getElementById("priceChangeForm").reset();
+        document.getElementById("noticeMessage").textContent = "料金改定を登録しました。";
+        await refreshAll();
+      }
+    }
+
+    async function handleDeletePriceChange(subId, changeId) {
+      clearMessages();
+      const res = await apiFetch("/subscriptions/" + subId + "/price-changes/" + changeId, { method: "DELETE" });
+      if (res.ok) await refreshAll();
+    }
+
+    async function handleAddPause(event) {
+      event.preventDefault();
+      clearMessages();
+      const subId = document.getElementById("targetSubId").value;
+      const pause_from = document.getElementById("pauseFrom").value;
+      const pauseUntilRaw = document.getElementById("pauseUntil").value;
+      const pause_until = pauseUntilRaw ? pauseUntilRaw : null;
+      const res = await apiFetch("/subscriptions/" + subId + "/pauses", {
+        method: "POST",
+        body: JSON.stringify({ pause_from: pause_from, pause_until: pause_until })
+      });
+      if (res.ok) {
+        document.getElementById("pauseForm").reset();
+        document.getElementById("noticeMessage").textContent = "停止期間を登録しました。";
+        await refreshAll();
+      }
+    }
+
+    async function handleDeletePause(subId, pauseId) {
+      clearMessages();
+      const res = await apiFetch("/subscriptions/" + subId + "/pauses/" + pauseId, { method: "DELETE" });
+      if (res.ok) await refreshAll();
+    }
+
+    async function handlePocketCreate(event) {
+      event.preventDefault();
+      clearMessages();
+      const payload = {
+        entry_type: document.getElementById("pocketType").value,
+        amount: Number(document.getElementById("pocketAmount").value),
+        entry_date: document.getElementById("pocketDate").value,
+        title: document.getElementById("pocketTitle").value.trim(),
+        category: document.getElementById("pocketCategory").value.trim() || "その他",
+        payment_method: document.getElementById("pocketMethod").value,
+        memo: document.getElementById("pocketMemo").value.trim()
+      };
+      const res = await apiFetch("/pocket-entries", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        document.getElementById("pocketForm").reset();
+        setDefaultPocketDate();
+        document.getElementById("noticeMessage").textContent = "おこづかい帳に記録しました。";
+        await refreshAll();
+      }
+    }
+
+    async function handlePocketDelete(id) {
+      clearMessages();
+      const targetItem = pocketItemsCache.find(function(x) {
+        return Number(x.id) === Number(id);
+      });
+      const pairedItem = findPairedTransferEntry(targetItem);
+
+      if (pairedItem) {
+        const pairRes = await apiFetch("/pocket-entries/" + pairedItem.id, { method: "DELETE" });
+        if (!pairRes.ok) {
+          document.getElementById("errorMessage").textContent = "対になる振替明細の削除に失敗しました。";
+          return;
+        }
+      }
+
+      const res = await apiFetch("/pocket-entries/" + id, { method: "DELETE" });
+      if (res.ok) {
+        document.getElementById("noticeMessage").textContent = pairedItem
+          ? "振替明細と対になる明細をまとめて削除しました。"
+          : "明細を削除しました。";
+        await refreshAll();
+      }
+    }
+
+    async function handleDelete(id) {
+      clearMessages();
+      const res = await apiFetch("/subscriptions/" + id, { method: "DELETE" });
+      if (res.ok) {
+        document.getElementById("noticeMessage").textContent = "削除しました。";
+        await refreshAll();
+      }
+    }
+
+    (async function initAuth() {
+      const token = getAuthToken();
+      if (!token) {
+        showAuthView("");
+        return;
+      }
+      try {
+        const res = await apiFetch("/auth/me");
+        if (!res.ok) {
+          setAuthToken(null);
+          showAuthView("");
+          return;
+        }
+        const me = await res.json();
+        showMainView(me.username);
+        await refreshAll();
+      } catch (_) {
+        showAuthView("");
+      }
+    })();
+  </script>
+</body>
+</html>
